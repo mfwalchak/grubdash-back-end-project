@@ -41,23 +41,12 @@ function dishesAreValid(req, res, next) {
       });
     }
   }
-  // if (data.dishes.map((dish)=> !dish.quantity)) {
-  //   return next({
-  //     status: 400,
-  //     message: `Dish ${index} must have a quantity that is an integer greater than 0`,
-  //   })
-  // }
   next();
 }
 
 function create(req, res, next) {
   const {
-    data: {
-      deliverTo,
-      mobileNumber,
-      status,
-      dishes: [{ id, name, description, image_url, price, quantity }],
-    },
+    data: { deliverTo, mobileNumber, dishes: [{ id, name, description, image_url, price, quantity }]}
   } = req.body;
   const newOrder = {
     id: nextId(),
@@ -86,6 +75,7 @@ function orderExists(req, res, next) {
   const { orderId } = req.params;
   const foundOrder = orders.find((order) => order.id === orderId);
   if (foundOrder) {
+    res.locals.foundOrder = foundOrder;
     next();
   } else {
     next({
@@ -98,14 +88,7 @@ function orderExists(req, res, next) {
 function validateUpdate(req, res, next) {
   const { orderId } = req.params;
   const {
-    data: {
-      id,
-      deliverTo,
-      mobileNumber,
-      status,
-      dishes: [{ id: DishId, name, description, image_url, price, quantity }],
-    } = {},
-  } = req.body;
+    data: { id, status, dishes: []} = {} } = req.body;
   if (id && id !== orderId) {
     next({
       status: 400,
@@ -127,29 +110,9 @@ function validateUpdate(req, res, next) {
   }
   next();
 }
-// function checkOrderStatus(req, res, next) {
-//   const {data} = req.body;
-//   const requiredStatus = [
-//     "pending",
-//     "preparing",
-//     "out-for-delivery",
-//     "delivered",
-//   ];
-//   for (const currentStatus of requiredStatus) {
-//     if (!data.status[currentStatus]) {
-//   next({
-//     status: 400,
-//     message:
-//       "Order must have a status of pending, preparing, out-for-delivery, delivered",
-//   });
-// }
-//     next();
-//   }
-// }
 
 function update(req, res, next) {
-  const { orderId } = req.params;
-  const foundOrder = orders.find((order) => order.id === orderId);
+  const foundOrder = res.locals.foundOrder;
   const { data } = req.body;
   foundOrder.deliverTo = data.deliverTo;
   foundOrder.mobileNumber = data.mobileNumber;
@@ -163,8 +126,7 @@ function list(req, res, next) {
 }
 
 function destroyValidator(req, res, next) {
-  const { orderId } = req.params;
-  const foundOrder = orders.find((order) => order.id === orderId);
+  const foundOrder = res.locals.foundOrder;
   if (foundOrder.status !== "pending") {
     next({
       status: 400,
