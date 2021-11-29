@@ -780,8 +780,7 @@ describe("orders router", () => {
       const response = await request(app)
         .delete(`${ATTACHED_PATH}/30`)
         .set("Accept", "application/json");
-
-      expect(response.body.data).toBeUndefined();
+          expect(response.body.data).toBeUndefined();
       expect(response.body.error).toContain("pending");
       expect(response.status).toBe(400);
     });

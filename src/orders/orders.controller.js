@@ -30,14 +30,16 @@ function dishesAreValid(req, res, next) {
   }
   const orderDishes = data.dishes;
   for (const index in orderDishes) {
-    if (!orderDishes[index].quantity || 
-      orderDishes[index].quantity === 0 || 
-      !Number.isInteger(orderDishes[index].quantity)){
-        return next({
-          status: 400,
-          message: `Dish ${index} must have a quantity that is an integer greater than 0`,
-        });
-      }
+    if (
+      !orderDishes[index].quantity ||
+      orderDishes[index].quantity === 0 ||
+      !Number.isInteger(orderDishes[index].quantity)
+    ) {
+      return next({
+        status: 400,
+        message: `Dish ${index} must have a quantity that is an integer greater than 0`,
+      });
+    }
   }
   // if (data.dishes.map((dish)=> !dish.quantity)) {
   //   return next({
@@ -66,6 +68,7 @@ function create(req, res, next) {
   };
   orders.push(newOrder);
   res.status(201).json({ data: newOrder });
+  res.locals.data = {data};
 }
 
 function read(req, res, next) {
@@ -88,7 +91,7 @@ function orderExists(req, res, next) {
   } else {
     next({
       status: 404,
-      message: "Order not found",
+      message: `Order not found: ${orderId}`,
     });
   }
 }
@@ -161,12 +164,13 @@ function list(req, res, next) {
 }
 
 function destroyValidator(req, res, next) {
-  const { data } = req.body;
-  if (data.status !== "pending"){
+  const { orderId } = req.params;
+  const foundOrder = orders.find((order) => order.id === orderId);
+  if (foundOrder.status !== "pending") {
     next({
       status: 400,
-      message: "An order cannot be deleted unless it is pending"
-    })
+      message: "An order cannot be deleted unless it is pending",
+    });
   }
   next();
 }
@@ -191,5 +195,5 @@ module.exports = {
     validateUpdate,
     update,
   ],
-  destroy:[destroyValidator, destroy]
+  destroy: [orderExists, destroyValidator, destroy],
 };
