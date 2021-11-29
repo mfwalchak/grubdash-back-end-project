@@ -68,7 +68,6 @@ function create(req, res, next) {
   };
   orders.push(newOrder);
   res.status(201).json({ data: newOrder });
-  res.locals.data = {data};
 }
 
 function read(req, res, next) {
