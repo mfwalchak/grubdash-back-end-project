@@ -6,7 +6,7 @@ const orders = require(path.resolve("src/data/orders-data"));
 // Use this function to assigh ID's when necessary
 const nextId = require("../utils/nextId");
 
-// TODO: Implement the /orders handlers needed to make the tests pass
+//validates whether order request body has certain properties
 function orderHasProperties(req, res, next) {
   const { data } = req.body;
   const requiredFields = ["deliverTo", "mobileNumber", "dishes"];
@@ -20,6 +20,8 @@ function orderHasProperties(req, res, next) {
   }
   next();
 }
+
+//validates whether dishes in order are valid and in the correct format
 function dishesAreValid(req, res, next) {
   const { data } = req.body;
   if (data.dishes.length === 0 || !Array.isArray(data.dishes)) {
@@ -43,34 +45,7 @@ function dishesAreValid(req, res, next) {
   }
   next();
 }
-
-function create(req, res, next) {
-  const {
-    data: { deliverTo, mobileNumber, dishes: [{ id, name, description, image_url, price, quantity }]}
-  } = req.body;
-  const newOrder = {
-    id: nextId(),
-    deliverTo,
-    mobileNumber,
-    status: "pending",
-    dishes: [{ id, name, description, image_url, price, quantity }],
-  };
-  orders.push(newOrder);
-  res.status(201).json({ data: newOrder });
-}
-
-function read(req, res, next) {
-  const { orderId } = req.params;
-  const foundOrder = orders.find((order) => order.id === orderId);
-  if (foundOrder) {
-    res.json({ data: foundOrder });
-  } else {
-    return next({
-      status: 404,
-      message: `${orderId} does not exist.`,
-    });
-  }
-}
+//validates whether the order exists already
 function orderExists(req, res, next) {
   const { orderId } = req.params;
   const foundOrder = orders.find((order) => order.id === orderId);
@@ -85,10 +60,10 @@ function orderExists(req, res, next) {
   }
 }
 
+//validates if the order is in a state that can be updated
 function validateUpdate(req, res, next) {
   const { orderId } = req.params;
-  const {
-    data: { id, status, dishes: []} = {} } = req.body;
+  const { data: { id, status, dishes: [] } = {} } = req.body;
   if (id && id !== orderId) {
     next({
       status: 400,
@@ -111,6 +86,41 @@ function validateUpdate(req, res, next) {
   next();
 }
 
+//creates a new order
+function create(req, res, next) {
+  const {
+    data: {
+      deliverTo,
+      mobileNumber,
+      dishes: [{ id, name, description, image_url, price, quantity }],
+    },
+  } = req.body;
+  const newOrder = {
+    id: nextId(),
+    deliverTo,
+    mobileNumber,
+    status: "pending",
+    dishes: [{ id, name, description, image_url, price, quantity }],
+  };
+  orders.push(newOrder);
+  res.status(201).json({ data: newOrder });
+}
+
+//finds and returns an existing order
+function read(req, res, next) {
+  const { orderId } = req.params;
+  const foundOrder = orders.find((order) => order.id === orderId);
+  if (foundOrder) {
+    res.json({ data: foundOrder });
+  } else {
+    return next({
+      status: 404,
+      message: `${orderId} does not exist.`,
+    });
+  }
+}
+
+//updates an existing order
 function update(req, res, next) {
   const foundOrder = res.locals.foundOrder;
   const { data } = req.body;
@@ -121,10 +131,12 @@ function update(req, res, next) {
   res.json({ data: foundOrder });
 }
 
+//returns a list of all existing orders
 function list(req, res, next) {
   res.json({ data: orders });
 }
 
+//validates whether an order can be deleted
 function destroyValidator(req, res, next) {
   const foundOrder = res.locals.foundOrder;
   if (foundOrder.status !== "pending") {
@@ -136,6 +148,7 @@ function destroyValidator(req, res, next) {
   next();
 }
 
+//deletes an order upon completion of the validation check
 function destroy(req, res, next) {
   const { orderId } = req.params;
   const index = orders.findIndex((order) => order.id === orderId);
